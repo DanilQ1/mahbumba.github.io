@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Новая игра</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: url('bombucksbgnew.JPEG') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            gap: 40px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            width: min-content;
+        }
+
+        .row {
+            display: flex;
+            margin-bottom: -10px;
+        }
+
+        .game-button {
+            width: 80px;
+            height: 80px;
+            margin: -2px;
+            padding: 0;
+            position: relative;
+        }
+
+        .game-button img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            transition: transform 0.2s ease;
+        }
+
+        .game-button:hover img {
+            transform: scale(1.05);
+            z-index: 1;
+        }
+
+        .game-button:active img {
+            transform: scale(0.95);
+        }
+
+        .block-label {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 35px;
+            background: transparent;
+            border-radius: 4px;
+            z-index: 2;
+        }
+
+        .neon-oval {
+            position: absolute;
+            width: 30px;
+            height: 20px;
+            border: 2px solid rgba(32, 255, 192, 0.7);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 5px #20ffc0,
+                0 0 10px #20ffc0,
+                0 0 15px #20ffc0;
+            z-index: 3;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: transparent;
+            animation: appearAndGlow 0.5s ease-out forwards,
+                       glow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes appearAndGlow {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 
+                    0 0 5px #20ffc0,
+                    0 0 10px #20ffc0,
+                    0 0 15px #20ffc0;
+                border-color: rgba(32, 255, 192, 0.7);
+            }
+            to {
+                box-shadow: 
+                    0 0 8px #20ffc0,
+                    0 0 13px #20ffc0,
+                    0 0 18px #20ffc0;
+                border-color: rgba(32, 255, 192, 0.9);
+            }
+        }
+
+        .start-button {
+            padding: 15px 40px;
+            font-size: 18px;
+            color: rgba(32, 255, 192, 0.9);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(32, 255, 192, 0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 
+                0 0 5px rgba(32, 255, 192, 0.3),
+                0 0 10px rgba(32, 255, 192, 0.2),
+                inset 0 0 5px rgba(32, 255, 192, 0.1);
+        }
+
+        .start-button:hover {
+            background: rgba(32, 255, 192, 0.1);
+            box-shadow: 
+                0 0 10px rgba(32, 255, 192, 0.5),
+                0 0 20px rgba(32, 255, 192, 0.3),
+                inset 0 0 10px rgba(32, 255, 192, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .start-button:active {
+            transform: translateY(1px);
+        }
+
+        .row.sliding-down {
+            animation: slideDown 0.5s forwards;
+        }
+
+        .row.sliding-in {
+            animation: slideIn 0.5s forwards;
+        }
+
+        @keyframes slideDown {
+            to {
+                transform: translateY(100%);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.5s ease;
+            backdrop-filter: blur(0px);
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -40%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px 50px;
+            border-radius: 15px;
+            border: 2px solid rgba(32, 255, 192, 0);
+            box-shadow: 
+                0 0 15px rgba(32, 255, 192, 0),
+                0 0 30px rgba(32, 255, 192, 0),
+                inset 0 0 10px rgba(32, 255, 192, 0);
+            text-align: center;
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.active {
+            display: block;
+            opacity: 1;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+            border-color: rgba(32, 255, 192, 0.7);
+            box-shadow: 
+                0 0 15px rgba(32, 255, 192, 0.3),
+                0 0 30px rgba(32, 255, 192, 0.2),
+                inset 0 0 10px rgba(32, 255, 192, 0.1);
+        }
+
+        .modal h2 {
+            color: rgba(32, 255, 192, 0.9);
+            margin: 0 0 20px 0;
+            font-size: 28px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s;
+        }
+
+        .modal p {
+            color: rgba(32, 255, 192, 0.8);
+            font-size: 20px;
+            margin: 0;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.4s;
+        }
+
+        .modal.active h2,
+        .modal.active p {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        @keyframes countdown {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Добавляем стили для кнопки назад */
+        .back-button {
+            padding: 15px 40px;
+            font-size: 18px;
+            color: rgba(32, 255, 192, 0.9);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(32, 255, 192, 0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow:
+                0 0 5px rgba(32, 255, 192, 0.3),
+                0 0 10px rgba(32, 255, 192, 0.2),
+                inset 0 0 5px rgba(32, 255, 192, 0.1);
+            margin-top: 20px; /* Отступ от кнопки НАЧАТЬ */
+        }
+
+        .back-button:hover {
+            background: rgba(32, 255, 192, 0.1);
+            box-shadow:
+                0 0 10px rgba(32, 255, 192, 0.5),
+                0 0 20px rgba(32, 255, 192, 0.3),
+                inset 0 0 10px rgba(32, 255, 192, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .back-button:active {
+            transform: translateY(1px);
+        }
+    </style>
+
+    <!-- Добавляем модальное окно в HTML -->
+    <div class="modal-overlay">
+        <div class="modal">
+            <h2>Игра окончена!</h2>
+            <p>Перезапуск через <span id="countdown">3</span> секунд</p>
+        </div>
+    </div>
+</head>
+<body>
+    <div class="game-container">
+        <div class="row">
+            <div class="game-button">
+                <img src="block2025.png" alt="Block">
+                <div class="block-label"></div>
+            </div>
+            <div class="game-button">
+                <img src="block2025.png" alt="Block">
+                <div class="block-label"></div>
+            </div>
+            <div class="game-button">
+                <img src="block2025.png" alt="Block">
+                <div class="block-label"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="game-button">
+                <img src="block2025.png" alt="Block">
+                <div class="block-label"></div>
+            </div>
+            <div class="game-button">
+                <img src="block2025.png" alt="Block">
+                <div class="block-label"></div>
+            </div>
+            <div class="game-button">
+                <img src="block2025.png" alt="Block">
+                <div class="block-label"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="game-button">
+                <img src="block2025.png" alt="Block">
+                <div class="block-label"></div>
+            </div>
+            <div class="game-button">
+                <img src="block2025.png" alt="Block">
+                <div class="block-label"></div>
+            </div>
+            <div class="game-button">
+                <img src="block2025.png" alt="Block">
+                <div class="block-label"></div>
+            </div>
+        </div>
+    </div>
+    <button class="start-button">Начать</button>
+    <button class="back-button" onclick="window.location.href='https://danilq1.github.io/mahmutqwe.github.io/newnegocio.html'">Назад</button>
+
+    <script>
+        let currentStep = 0;
+        let maxSteps = 7; // 7 шагов всего
+        let gameEnded = false; // Флаг для отслеживания конца игры
+        
+        document.querySelector('.start-button').addEventListener('click', function() {
+            if (gameEnded || currentStep >= maxSteps) {
+                return; // Кнопка не реагирует после окончания игры
+            }
+
+            currentStep++;
+            const rows = document.querySelectorAll('.row');
+            
+            if (currentStep <= 3) {
+                // Первые три шага - снизу вверх (2 -> 1 -> 0)
+                const targetRowIndex = 2 - (currentStep - 1);
+                const labels = rows[targetRowIndex].querySelectorAll('.block-label');
+                const randomLabel = labels[Math.floor(Math.random() * labels.length)];
+                const neonOval = document.createElement('div');
+                neonOval.className = 'neon-oval';
+                randomLabel.appendChild(neonOval);
+            } else {
+                // Для шага 4 и последующих
+                // Находим существующие обручи и их родителей
+                const existingOvals = [];
+                rows.forEach((row, index) => {
+                    if (index < 2) { // Только для первых двух строк
+                        const oval = row.querySelector('.neon-oval');
+                        if (oval) {
+                            const parent = oval.parentElement;
+                            existingOvals.push({
+                                oval: oval.cloneNode(true),
+                                parentIndex: Array.from(row.querySelectorAll('.block-label')).indexOf(parent)
+                            });
+                        }
+                    }
+                });
+
+                rows.forEach((row, index) => {
+                    if (index < rows.length - 1) {
+                        row.style.transition = 'transform 0.5s';
+                        row.style.transform = `translateY(${100}%)`;
+                    } else {
+                        row.style.transition = 'transform 0.5s, opacity 0.5s';
+                        row.style.transform = `translateY(${100}%)`;
+                        row.style.opacity = '0';
+                    }
+                });
+
+                setTimeout(() => {
+                    const newRow = rows[0].cloneNode(true);
+                    // Очищаем новую строку
+                    newRow.querySelectorAll('.neon-oval').forEach(oval => oval.remove());
+                    
+                    newRow.style.transform = 'translateY(-100%)';
+                    newRow.style.opacity = '0';
+                    
+                    rows[0].parentNode.insertBefore(newRow, rows[0]);
+                    rows[rows.length - 1].remove();
+
+                    setTimeout(() => {
+                        newRow.style.transition = 'transform 0.5s, opacity 0.5s';
+                        newRow.style.transform = 'translateY(0)';
+                        newRow.style.opacity = '1';
+
+                        const currentRows = document.querySelectorAll('.row');
+                        
+                        // Восстанавливаем обручи на смещенных строках
+                        existingOvals.forEach((item, index) => {
+                            const row = currentRows[index + 1];
+                            const labels = row.querySelectorAll('.block-label');
+                            const targetLabel = labels[item.parentIndex];
+                            // Очищаем перед добавлением
+                            targetLabel.querySelectorAll('.neon-oval').forEach(oval => oval.remove());
+                            targetLabel.appendChild(item.oval);
+                        });
+
+                        currentRows.forEach((row, index) => {
+                            if (index > 0) {
+                                row.style.transform = 'translateY(0)';
+                            }
+                        });
+
+                        // Добавляем новый обруч в новую строку
+                        const labels = newRow.querySelectorAll('.block-label');
+                        const randomLabel = labels[Math.floor(Math.random() * labels.length)];
+                        const neonOval = document.createElement('div');
+                        neonOval.className = 'neon-oval';
+                        randomLabel.appendChild(neonOval);
+
+                        // Проверяем завершение игры
+                        if (currentStep === maxSteps) {
+                            gameEnded = true;
+                            setTimeout(() => {
+                                const overlay = document.querySelector('.modal-overlay');
+                                const modal = document.querySelector('.modal');
+                                const countdownElement = document.getElementById('countdown');
+                                let count = 3;
+
+                                overlay.classList.add('active');
+                                modal.classList.add('active');
+
+                                const countdownInterval = setInterval(() => {
+                                    count--;
+                                    countdownElement.textContent = count;
+                                    countdownElement.style.animation = 'none';
+                                    void countdownElement.offsetWidth; // Сброс анимации
+                                    countdownElement.style.animation = 'countdown 1s ease';
+                                    
+                                    if (count <= 0) {
+                                        clearInterval(countdownInterval);
+                                        setTimeout(() => {
+                                            location.reload();
+                                        }, 1000);
+                                    }
+                                }, 1000);
+                            }, 1000); // Показываем модальное окно через 1 секунду после последнего обруча
+                        }
+                    }, 50);
+                }, 500);
+            }
+
+            // Проверяем завершение игры для первых трех шагов
+            if (currentStep === maxSteps && currentStep <= 3) {
+                gameEnded = true;
+                setTimeout(() => {
+                    const overlay = document.querySelector('.modal-overlay');
+                    const modal = document.querySelector('.modal');
+                    const countdownElement = document.getElementById('countdown');
+                    let count = 3;
+
+                    overlay.classList.add('active');
+                    modal.classList.add('active');
+
+                    const countdownInterval = setInterval(() => {
+                        count--;
+                        countdownElement.textContent = count;
+                        countdownElement.style.animation = 'none';
+                        void countdownElement.offsetWidth;
+                        countdownElement.style.animation = 'countdown 1s ease';
+                        
+                        if (count <= 0) {
+                            clearInterval(countdownInterval);
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        }
+                    }, 1000);
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
